@@ -1,4 +1,5 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import * as exp from 'constants';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, parseLinktext, TFile } from 'obsidian';
 
 // Remember to rename these classes and interfaces!
 
@@ -28,40 +29,98 @@ export default class MyPlugin extends Plugin {
 		const statusBarItemEl = this.addStatusBarItem();
 		statusBarItemEl.setText('Status Bar Text');
 
-		// This adds a simple command that can be triggered anywhere
+		// This adds a export command to the dropdown menu
 		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
+			id: 'run-export',
+			name: 'Export to main file!',
 			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
+				// Get current opened file
+				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
+				if(view == null){
+					new FailModal(this.app, "No View Found!");
+					return;
 				}
+				else if (view.file == null){
+					new FailModal(this.app, "No File Found!");
+					return;
+				}
+
+				// Gather all vault files
+				const VaultFiles = this.app.vault.getMarkdownFiles();
+
+				// Run code
+				function Recursive(app : App, currentFile : TFile, layer : string){
+					// Get the files altered content
+					return app.vault.read(currentFile).then(fileString => { // Waits for the return
+						// TODO: This assumes that the file needs to be split
+						var fileLineData = fileString.split('\n');
+
+						// Store for current Data
+						var Export = "";
+
+						// TODO: Add Title Of Document?
+
+						// Begin the parsing
+						fileLineData.forEach(line => {
+							if(line.length == 0){
+								Export += '\n';
+								return;
+							}
+
+							// File Link
+							if(line[0] == "!" && line.length > 5){
+								if(line[1] == "[" && line [2] == "[" && line[3] != "[" && line[line.length - 1] == "]" && line[line.length - 2] == "]"){
+									// Link confirmed, so enter recursive nature
+
+									// Forward link
+									var linkedFile = parseLinktext(line);
+
+									// Now find it in the markdown files
+									var File = null;
+									VaultFiles.forEach(file => {
+										if (file.path == linkedFile.path){
+											File = file;
+											return;
+										}
+									});
+
+									if (File == null){
+										new FailModal(app, "Failed to find file link!").open();
+										return;
+									}
+
+									Export += Recursive(app, File, layer + "#");
+								}
+							}
+
+							// File headers
+							if(line[0] == "#"){
+								// We want to add the layered hashtags
+								Export += layer;
+							}
+
+							// Load line
+							Export += line + '\n';
+						});
+
+						// Return point
+						return Export;
+					});
+				};
+
+				Recursive(this.app, view.file, "").then(ExportString => {
+					new FailModal(this.app, ExportString).open();
+
+					// Create a new file with '_Export' suffix
+					app.vault.create(view.file.path.substring(0, view.file.path.length - 3) + "_Export.md").then(outFile => {
+						// Write export data
+						app.vault.modify(outFile, ExportString);
+					});
+
+					// Send confirmation of export
+					new ConfirmationModal(this.app).open();
+				});
 			}
 		});
 
@@ -91,14 +150,34 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
-class SampleModal extends Modal {
+class FailModal extends Modal {
+	WHY : string
+
+	constructor(app: App, why : string) {
+		super(app);
+
+		this.WHY = why
+	}
+
+	onOpen() {
+		const {contentEl} = this;
+		contentEl.setText('Failed: ' + this.WHY);
+	}
+
+	onClose() {
+		const {contentEl} = this;
+		contentEl.empty();
+	}
+}
+
+class ConfirmationModal extends Modal {
 	constructor(app: App) {
 		super(app);
 	}
 
 	onOpen() {
 		const {contentEl} = this;
-		contentEl.setText('Woah!');
+		contentEl.setText('Exported!');
 	}
 
 	onClose() {
@@ -125,6 +204,16 @@ class SampleSettingTab extends PluginSettingTab {
 			.setDesc('It\'s a secret')
 			.addText(text => text
 				.setPlaceholder('Enter your secret')
+				.setValue(this.plugin.settings.mySetting)
+				.onChange(async (value) => {
+					this.plugin.settings.mySetting = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
+			.setName('Setting #2')
+			.setDesc('It\'s a secret')
+			.addText(text => text
+				.setPlaceholder('Hello')
 				.setValue(this.plugin.settings.mySetting)
 				.onChange(async (value) => {
 					this.plugin.settings.mySetting = value;
