@@ -33,15 +33,14 @@ export default class MyPlugin extends Plugin {
 		this.addCommand({
 			id: 'run-export',
 			name: 'Export to main file!',
-			callback: () => {
+			callback: async () => {
 				// Get current opened file
 				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 
-				if(view == null){
+				if (view == null) {
 					new FailModal(this.app, "No View Found!");
 					return;
-				}
-				else if (view.file == null){
+				} else if (view.file == null) {
 					new FailModal(this.app, "No File Found!");
 					return;
 				}
@@ -50,77 +49,84 @@ export default class MyPlugin extends Plugin {
 				const VaultFiles = this.app.vault.getMarkdownFiles();
 
 				// Run code
-				function Recursive(app : App, currentFile : TFile, layer : string){
+				async function Recursive(app: App, currentFile: TFile, layer: string): Promise<string> {
 					// Get the files altered content
-					return app.vault.read(currentFile).then(fileString => { // Waits for the return
-						// TODO: This assumes that the file needs to be split
-						var fileLineData = fileString.split('\n');
+					const fileString = await app.vault.read(currentFile);
 
-						// Store for current Data
-						var Export = "";
+					// TODO: This assumes that the file needs to be split
+					var fileLineData = fileString.split('\n');
 
-						// TODO: Add Title Of Document?
+					// Store for current Data
+					var Export = layer + " " + currentFile.basename + "\n";
 
-						// Begin the parsing
-						fileLineData.forEach(line => {
-							if(line.length == 0){
-								Export += '\n';
-								return;
+					// TODO: Add Title Of Document?
+
+					// Begin the parsing
+					for (let line of fileLineData) {
+						if (line.length == 0) {
+							Export += '\n';
+							continue;
+						}
+
+						// new FailModal(app, "Line: " + line).open();
+
+						// Check if the line has an Obsidian embed link
+						const embedLinkPattern = /^!\[\[(?![^[]+\.\S)(.+?)(?:\|.+?)?\]\]/; 
+						const match = line.match(embedLinkPattern);
+
+						if (match) {
+							const linkPath = match[1]; // This extracts 'path/to/file' from '![[path/to/file|alias]]'
+							// new FailModal(app, "Link: " + linkPath).open();
+							
+							// Search by exact path first. This handles folder links and avoids duplicates.
+							let FileOut = VaultFiles.find(file => file.path === linkPath + ".md");
+							
+							// If not found by exact path, and it doesn't look like a folder link, try to find by filename
+							if (!FileOut && !linkPath.includes('/')) {
+								FileOut = VaultFiles.find(file => file.path.endsWith(linkPath + ".md"));
+							}
+							
+							if (!FileOut) {
+								new FailModal(app, "Failed to find file link: " + linkPath).open();
+								continue;
 							}
 
-							// File Link
-							if(line[0] == "!" && line.length > 5){
-								if(line[1] == "[" && line [2] == "[" && line[3] != "[" && line[line.length - 1] == "]" && line[line.length - 2] == "]"){
-									// Link confirmed, so enter recursive nature
+							const result = await Recursive(app, FileOut, layer + "#");
+							Export += result;
+							continue;
+						}
 
-									// Forward link
-									var linkedFile = parseLinktext(line);
+						// File headers
+						if (line[0] == "#") {
+							// We want to add the layered hashtags
+							Export += layer;
+						}
 
-									// Now find it in the markdown files
-									var File = null;
-									VaultFiles.forEach(file => {
-										if (file.path == linkedFile.path){
-											File = file;
-											return;
-										}
-									});
+						// Load line
+						Export += line + '\n';
+					}
 
-									if (File == null){
-										new FailModal(app, "Failed to find file link!").open();
-										return;
-									}
-
-									Export += Recursive(app, File, layer + "#");
-								}
-							}
-
-							// File headers
-							if(line[0] == "#"){
-								// We want to add the layered hashtags
-								Export += layer;
-							}
-
-							// Load line
-							Export += line + '\n';
-						});
-
-						// Return point
-						return Export;
-					});
+					return Export;
 				};
 
-				Recursive(this.app, view.file, "").then(ExportString => {
-					new FailModal(this.app, ExportString).open();
+				(async () => {
+					const ExportString = await Recursive(this.app, view.file, "");
 
-					// Create a new file with '_Export' suffix
-					app.vault.create(view.file.path.substring(0, view.file.path.length - 3) + "_Export.md").then(outFile => {
-						// Write export data
-						app.vault.modify(outFile, ExportString);
-					});
+					// new FailModal(this.app, "Result: " + ExportString).open();
+					// new FailModal(this.app, view.file.basename + "_Export.md").open();
+
+					try {
+						const outFile = await this.app.vault.create(view.file.basename + "_Export.md", ExportString);
+					} catch (error) {
+						new FailModal(this.app, "Error creating or modifying the file:" + error).open();
+					}
+
+					// Write export data
+					// await this.app.vault.modify(outFile, ExportString);
 
 					// Send confirmation of export
 					new ConfirmationModal(this.app).open();
-				});
+				})();
 			}
 		});
 
