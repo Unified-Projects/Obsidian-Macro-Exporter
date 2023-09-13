@@ -1,0 +1,11 @@
+{
+	"id": "markdown-exporter",
+	"name": "Markdown Exporter",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "A plugin that combines markdown files into one output through links.",
+	"author": "Unified-Projects",
+	"authorUrl": "https://unified-projects.co.uk",
+	"fundingUrl": "",
+	"isDesktopOnly": true
+}
