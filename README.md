@@ -1,2 +1,2 @@
 # Obsidian-Macro-Exporter
-A pluggin for obsidian that combines all linked files into one export
+A plugin for obsidian that combines all linked files into one export
