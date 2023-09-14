@@ -49,7 +49,7 @@ export default class MyPlugin extends Plugin {
 				const VaultFiles = this.app.vault.getMarkdownFiles();
 
 				// Run code
-				async function Recursive(app: App, currentFile: TFile, layer: string): Promise<string> {
+				async function Recursive(app: App, currentFile: TFile, layer: string, firtRun : boolean = false): Promise<string> {
 					// Get the files altered content
 					const fileString = await app.vault.read(currentFile);
 
@@ -57,7 +57,9 @@ export default class MyPlugin extends Plugin {
 					var fileLineData = fileString.split('\n');
 
 					// Store for current Data
-					var Export = layer + " " + currentFile.basename + "\n";
+					if(!firtRun){
+						var Export = layer + " " + currentFile.basename + "\n";
+					}
 
 					// TODO: Add Title Of Document?
 
@@ -110,7 +112,7 @@ export default class MyPlugin extends Plugin {
 				};
 
 				(async () => {
-					const ExportString = await Recursive(this.app, view.file, "");
+					const ExportString = await Recursive(this.app, view.file, "", true);
 
 					// new FailModal(this.app, "Result: " + ExportString).open();
 					// new FailModal(this.app, view.file.basename + "_Export.md").open();
