@@ -4,17 +4,17 @@ import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Set
 // Remember to rename these classes and interfaces!
 
 interface MyPluginSettings {
-	StackedHashtags : boolean;
-	InsertTitles : boolean;
-	Export_Prefix : string;
-	Export_Suffix : string;
+	StackedHashtags: boolean;
+	InsertTitles: boolean;
+	Export_Prefix: string;
+	Export_Suffix: string;
 }
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
 	StackedHashtags: true,
-	InsertTitles : true,
-	Export_Prefix : "",
-	Export_Suffix : "_Export"
+	InsertTitles: true,
+	Export_Prefix: "",
+	Export_Suffix: "_Export"
 }
 
 export default class MyPlugin extends Plugin {
@@ -43,7 +43,7 @@ export default class MyPlugin extends Plugin {
 				const VaultFiles = this.app.vault.getMarkdownFiles();
 
 				// Run code
-				async function Recursive(app: App, currentFile: TFile, layer: string, settings : MyPluginSettings, firtRun : boolean = false): Promise<string> {
+				async function Recursive(app: App, currentFile: TFile, layer: string, settings: MyPluginSettings, firtRun: boolean = false): Promise<string> {
 					// Get the files altered content
 					const fileString = await app.vault.read(currentFile);
 
@@ -51,10 +51,10 @@ export default class MyPlugin extends Plugin {
 
 					// Store for current Data
 					var Export = "";
-					if(!firtRun && settings.InsertTitles && settings.StackedHashtags){
+					if (!firtRun && settings.InsertTitles && settings.StackedHashtags) {
 						Export = layer + " " + currentFile.basename + "\n";
 					}
-					else if(!firtRun && settings.InsertTitles && !settings.StackedHashtags){
+					else if (!firtRun && settings.InsertTitles && !settings.StackedHashtags) {
 						Export = "# " + currentFile.basename + "\n";
 					}
 
@@ -66,20 +66,20 @@ export default class MyPlugin extends Plugin {
 						}
 
 						// Check if the line has an Obsidian embed link
-						const embedLinkPattern = /^!\[\[(?![^[]+\.\S)(.+?)(?:\|.+?)?\]\]/; 
+						const embedLinkPattern = /^!\[\[(?![^[]+\.\S)(.+?)(?:\|.+?)?\]\]/;
 						const match = line.match(embedLinkPattern);
 
 						if (match) {
 							const linkPath = match[1]; // This extracts 'path/to/file' from '![[path/to/file|alias]]' and rejects extentions
-							
+
 							// Search by exact path first. This handles folder links and avoids duplicates.
 							let FileOut = VaultFiles.find(file => file.path == linkPath + ".md");
-							
+
 							// If not found by exact path, and it doesn't look like a folder link, try to find by filename
 							if (!FileOut && !linkPath.includes('/')) {
 								FileOut = VaultFiles.find(file => file.path.endsWith("/" + linkPath + ".md"));
 							}
-							
+
 							if (!FileOut) {
 								new FailModal(app, "Failed to find file link: " + linkPath).open();
 								continue;
@@ -106,7 +106,7 @@ export default class MyPlugin extends Plugin {
 				(async () => {
 					const ExportString = await Recursive(this.app, view.file, "", this.settings, true);
 
-					if(this.settings.Export_Prefix == "" && this.settings.Export_Suffix ==  ""){
+					if (this.settings.Export_Prefix == "" && this.settings.Export_Suffix == "") {
 						new FailModal(this.app, "Cannot replace exporting file, suffix or prefix needed.").open();
 					}
 
@@ -140,21 +140,21 @@ export default class MyPlugin extends Plugin {
 }
 
 class FailModal extends Modal {
-	WHY : string
+	WHY: string
 
-	constructor(app: App, why : string) {
+	constructor(app: App, why: string) {
 		super(app);
 
 		this.WHY = why
 	}
 
 	onOpen() {
-		const {contentEl} = this;
+		const { contentEl } = this;
 		contentEl.setText('Failed: ' + this.WHY);
 	}
 
 	onClose() {
-		const {contentEl} = this;
+		const { contentEl } = this;
 		contentEl.empty();
 	}
 }
@@ -165,12 +165,12 @@ class ConfirmationModal extends Modal {
 	}
 
 	onOpen() {
-		const {contentEl} = this;
+		const { contentEl } = this;
 		contentEl.setText('Exported Successfully');
 	}
 
 	onClose() {
-		const {contentEl} = this;
+		const { contentEl } = this;
 		contentEl.empty();
 	}
 }
@@ -178,13 +178,13 @@ class ConfirmationModal extends Modal {
 class SettingsTab extends PluginSettingTab {
 	plugin: MyPlugin;
 
-	constructor(app : App, plugin : MyPlugin){
+	constructor(app: App, plugin: MyPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
 
 	display(): void {
-		const {containerEl} = this;
+		const { containerEl } = this;
 
 		containerEl.empty();
 
