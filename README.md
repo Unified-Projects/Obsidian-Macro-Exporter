@@ -1,46 +1,42 @@
-# Obsidian-Markdown-Exporter
+# Obsidian Markdown Exporter
 
-A plugin for obsidian that combines all linked files into one export.
-
-It will recursively look over the current file and all linked and sub-linked files and copy all of their data into one markdown file.
+Obsidian Markdown Exporter allows you to consolidate content from your current file, its linked files, and their sub-linked files into a single markdown export.
 
 ![Plugin Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-The Obsidian-Markdown-Exporter efficiently collects content from your current file, its linked files, and their linked files, enabling you to consolidate all this data into a single markdown file. This capability is particularly valuable for crafting comprehensive documents in your Obsidian vault.
-
 ## Features
 
-Recursive Copying: Seamlessly copy content from the current file, its linked files, and their linked files, and so forth, recursively merging it into a unified markdown file.
+- **Recursive Copying**: Seamlessly copy content from the current file, its linked files, and their linked files, recursively merging it into a single markdown file.
 
-### Installation
+## Installation
 
-- Launch your Obsidian.md vault.
+1. Open your Obsidian.md vault.
 
-- Navigate to Settings.
+2. Navigate to Settings.
 
-- Select Community Plugins.
+3. Click on "Community Plugins."
 
-- Search for "Obsidian Markdown Exporter" and install it.
+4. Search for "Obsidian Markdown Exporter" and install it.
 
-- After installation, activate the plugin.
+5. Once installed, activate the plugin.
 
-- Customize the plugin's hotkey to align with your preferences.
+6. Customise the plugin's hotkey to match your preferences.
 
 ## Usage
 
-Open the file from which you wish to initiate the recursive copy.
+1. Open the file from which you want to initiate the recursive copy.
 
-Employ the plugin command via the command pallete by searching for "export to main" or utilise your designated keyboard shortcut to trigger the recursive copy procedure.
+2. Use the plugin command by searching for "Export to Main" in the command palette or utilise your designated keyboard shortcut to trigger the recursive copy operation.
 
-The plugin will generate an output markdown file named `{filename}_export.md` containing all the collected content.
+3. The plugin will create an output markdown file named `{filename}_export.md` containing all the collected content.
 
-Feel free to utilize and modify the generated file as needed.
+4. You are free to use and modify the generated file as needed.
 
 ## License
 
-This plugin operates under the MIT License. Consult the [LICENSE](LISCENCE.md) file for comprehensive licensing details.
+This plugin is released under the MIT License. Please consult the [LICENSE](LICENSE.md) file for comprehensive licensing details.
 
 ## Support
 
-For inquiries or if you encounter any difficulties, please consult the [FAQ](FAQ.md) or submit an issue on our GitHub repository.
+If you have any questions or encounter difficulties, please refer to the [FAQ](FAQ.md) or submit an issue on our GitHub repository.
