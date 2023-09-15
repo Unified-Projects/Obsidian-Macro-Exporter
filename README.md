@@ -35,7 +35,7 @@ Obsidian Markdown Exporter allows you to consolidate content from your current f
 
 ## License
 
-This plugin is released under the MIT License. Please consult the [LICENSE](LICENSE.md) file for comprehensive licensing details.
+This plugin is released under the MIT License. Please consult the [LICENSE](LICENCE.md) file for comprehensive licensing details.
 
 ## Support
 
