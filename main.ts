@@ -104,7 +104,7 @@ export default class MyPlugin extends Plugin {
 				};
 
 				(async () => {
-					const ExportString = await Recursive(this.app, view.file, "", true, this.settings);
+					const ExportString = await Recursive(this.app, view.file, "", this.settings, true);
 
 					if(this.settings.Export_Prefix == "" && this.settings.Export_Suffix ==  ""){
 						new FailModal(this.app, "Cannot replace exporting file, suffix or prefix needed.").open();
