@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-macro-exporter",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"description": "A plugin that combines markdown files into one output through links.",
 	"main": "main.js",
 	"scripts": {

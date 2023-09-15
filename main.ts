@@ -4,11 +4,17 @@ import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Set
 // Remember to rename these classes and interfaces!
 
 interface MyPluginSettings {
-	mySetting: string;
+	StackedHashtags : boolean;
+	InsertTitles : boolean;
+	Export_Prefix : string;
+	Export_Suffix : string;
 }
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+	StackedHashtags: true,
+	InsertTitles : true,
+	Export_Prefix : "",
+	Export_Suffix : "_Export"
 }
 
 export default class MyPlugin extends Plugin {
@@ -37,20 +43,20 @@ export default class MyPlugin extends Plugin {
 				const VaultFiles = this.app.vault.getMarkdownFiles();
 
 				// Run code
-				async function Recursive(app: App, currentFile: TFile, layer: string, firtRun : boolean = false): Promise<string> {
+				async function Recursive(app: App, currentFile: TFile, layer: string, settings : MyPluginSettings, firtRun : boolean = false): Promise<string> {
 					// Get the files altered content
 					const fileString = await app.vault.read(currentFile);
 
-					// TODO: This assumes that the file needs to be split
 					var fileLineData = fileString.split('\n');
 
 					// Store for current Data
 					var Export = "";
-					if(!firtRun){
+					if(!firtRun && settings.InsertTitles && settings.StackedHashtags){
 						Export = layer + " " + currentFile.basename + "\n";
 					}
-
-					// TODO: Add Title Of Document?
+					else if(!firtRun && settings.InsertTitles && !settings.StackedHashtags){
+						Export = "# " + currentFile.basename + "\n";
+					}
 
 					// Begin the parsing
 					for (let line of fileLineData) {
@@ -59,15 +65,12 @@ export default class MyPlugin extends Plugin {
 							continue;
 						}
 
-						// new FailModal(app, "Line: " + line).open();
-
 						// Check if the line has an Obsidian embed link
 						const embedLinkPattern = /^!\[\[(?![^[]+\.\S)(.+?)(?:\|.+?)?\]\]/; 
 						const match = line.match(embedLinkPattern);
 
 						if (match) {
-							const linkPath = match[1]; // This extracts 'path/to/file' from '![[path/to/file|alias]]'
-							// new FailModal(app, "Link: " + linkPath).open();
+							const linkPath = match[1]; // This extracts 'path/to/file' from '![[path/to/file|alias]]' and rejects extentions
 							
 							// Search by exact path first. This handles folder links and avoids duplicates.
 							let FileOut = VaultFiles.find(file => file.path === linkPath + ".md");
@@ -82,13 +85,13 @@ export default class MyPlugin extends Plugin {
 								continue;
 							}
 
-							const result = await Recursive(app, FileOut, layer + "#");
+							const result = await Recursive(app, FileOut, layer + "#", settings);
 							Export += result;
 							continue;
 						}
 
 						// File headers
-						if (line[0] == "#") {
+						if (line[0] == "#" && settings.StackedHashtags) {
 							// We want to add the layered hashtags
 							Export += layer;
 						}
@@ -101,25 +104,26 @@ export default class MyPlugin extends Plugin {
 				};
 
 				(async () => {
-					const ExportString = await Recursive(this.app, view.file, "", true);
+					const ExportString = await Recursive(this.app, view.file, "", true, this.settings);
 
-					// new FailModal(this.app, "Result: " + ExportString).open();
-					// new FailModal(this.app, view.file.basename + "_Export.md").open();
-
-					try {
-						const outFile = await this.app.vault.create(view.file.basename + "_Export.md", ExportString);
-					} catch (error) {
-						new FailModal(this.app, "Error creating or modifying the file:" + error).open();
+					if(this.settings.Export_Prefix == "" && this.settings.Export_Suffix ==  ""){
+						new FailModal(this.app, "Cannot replace exporting file, suffix or prefix needed.").open();
 					}
 
-					// Write export data
-					// await this.app.vault.modify(outFile, ExportString);
+					try {
+						const outFile = await this.app.vault.create(this.settings.Export_Prefix + view.file.basename + this.settings.Export_Suffix + ".md", ExportString);
+					} catch (error) {
+						new FailModal(this.app, "Error creating file:" + error).open();
+					}
 
 					// Send confirmation of export
 					new ConfirmationModal(this.app).open();
 				})();
 			}
 		});
+
+		// This adds a settings tab so the user can configure various aspects of the plugin
+		this.addSettingTab(new SettingsTab(this.app, this));
 	}
 
 	onunload() {
@@ -162,11 +166,68 @@ class ConfirmationModal extends Modal {
 
 	onOpen() {
 		const {contentEl} = this;
-		contentEl.setText('Exported!');
+		contentEl.setText('Exported Successfully');
 	}
 
 	onClose() {
 		const {contentEl} = this;
 		contentEl.empty();
+	}
+}
+
+class SettingsTab extends PluginSettingTab {
+	plugin: MyPlugin;
+
+	constructor(app : App, plugin : MyPlugin){
+		super(app, plugin);
+		this.plugin = plugin;
+	}
+
+	display(): void {
+		const {containerEl} = this;
+
+		containerEl.empty();
+
+		new Setting(containerEl)
+			.setName('Insert Titles')
+			.setDesc('Add linked file as a new title')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.InsertTitles)
+				.onChange(async (value) => {
+					this.plugin.settings.InsertTitles = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Chain Hashtags')
+			.setDesc('Add new hashtags for each link depth to change title sizes')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.StackedHashtags)
+				.onChange(async (value) => {
+					this.plugin.settings.StackedHashtags = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Export Prefix')
+			.setDesc('The text that comes before the exported file name.')
+			.addText(text => text
+				.setPlaceholder('_Export')
+				.setValue(this.plugin.settings.Export_Prefix)
+				.onChange(async (value) => {
+					this.plugin.settings.Export_Prefix = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Export Suffix')
+			.setDesc('The text that comes after the exported file name.')
+			.addText(text => text
+				.setPlaceholder('Export_')
+				.setValue(this.plugin.settings.Export_Suffix)
+				.onChange(async (value) => {
+					this.plugin.settings.Export_Suffix = value;
+					await this.plugin.saveSettings();
+				}));
 	}
 }
