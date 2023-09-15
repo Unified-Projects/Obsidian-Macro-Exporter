@@ -73,11 +73,11 @@ export default class MyPlugin extends Plugin {
 							const linkPath = match[1]; // This extracts 'path/to/file' from '![[path/to/file|alias]]' and rejects extentions
 							
 							// Search by exact path first. This handles folder links and avoids duplicates.
-							let FileOut = VaultFiles.find(file => file.path === linkPath + ".md");
+							let FileOut = VaultFiles.find(file => file.path == linkPath + ".md");
 							
 							// If not found by exact path, and it doesn't look like a folder link, try to find by filename
 							if (!FileOut && !linkPath.includes('/')) {
-								FileOut = VaultFiles.find(file => file.path.endsWith(linkPath + ".md"));
+								FileOut = VaultFiles.find(file => file.path.endsWith("/" + linkPath + ".md"));
 							}
 							
 							if (!FileOut) {
