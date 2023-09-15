@@ -92,8 +92,12 @@ export default class MyPlugin extends Plugin {
 
 						// File headers
 						if (line[0] == "#" && settings.StackedHashtags) {
-							// We want to add the layered hashtags
-							Export += layer;
+							if(line.length != 1){
+								if(line[1] == " "){
+									// We want to add the layered hashtags
+									Export += layer;
+								}
+							}
 						}
 
 						// Load line
