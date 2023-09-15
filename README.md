@@ -2,7 +2,7 @@
 
 Obsidian Markdown Exporter allows you to consolidate content from your current file, its linked files, and their sub-linked files into a single markdown export.
 
-![Plugin Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)
+![Plugin Version](https://img.shields.io/badge/version-v1.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## Features
